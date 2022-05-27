@@ -53,3 +53,46 @@ contract B {
 ```
 
 Because we use delegatecall, msg.sender inside B's `log()` function will be that of the original caller, whereas if we used a simple call it would be the address of the A contract
+
+#### What is multicall? Give example with code.
+
+Multicall is when we aggregate two or more separate calls to a contract's function, inside one function call, so that we can make sure those happen sequentially inside the same block, without any delay in between.
+
+Based on the previous example, I've changed the call to delegatecall into 2 different calls to staticcall. As shown:
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
+
+contract A {
+    function test(address _contractB) external payable  returns(bytes[] memory) {
+        (bool success1, bytes memory data1) = _contractB.staticcall(
+            abi.encodeWithSelector(B.log.selector)
+        );
+        
+
+        (bool success2, bytes memory data2) = _contractB.staticcall(
+            abi.encodeWithSelector(B.log.selector)
+        );
+
+        bytes[] memory retVal = new bytes[](2);
+
+        if(success1 && success2){
+            retVal[0] = data1;
+            retVal[1] = data2;
+        }
+        return retVal;
+    }
+}
+
+contract B {
+    function log() external payable returns(address) {
+        return msg.sender;
+    }
+}
+```
+
+What this returns this time is `0x0000000000000000000000009d7f74d0c41e726ec95884e0e97fa6129e3b5e99,0x0000000000000000000000009d7f74d0c41e726ec95884e0e97fa6129e3b5e99`, which is a bytes array of size 2, with the address of the calling contract.
+
+#### What is time lock? Give example with code.
+
